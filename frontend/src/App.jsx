@@ -1,5 +1,12 @@
 import { useState } from 'react';
 import './App.css';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useNavigate
+} from 'react-router-dom';
+import EvaluationPage from './EvaluationPage';
 
 const API_1 = 'https://rrctrl.legitthq.com/fastapi/editor-v2/ai-wordaddin-draft';
 const API_2 = 'https://aiqa.legitthq.com/fastapi/editor-v2/ai-wordaddin-draft';
@@ -59,6 +66,21 @@ const EXAMPLE_QUERIES = [
   "Draft a Software License Agreement granting a customer a non-exclusive license to use a proprietary software, including usage limits and restrictions.",
   "Draft a GDPR-compliant Data Processing Agreement between a data controller and processor, covering data handling, breach notification, and subprocessors."
 ];
+
+function HomePage() {
+  const navigate = useNavigate();
+  return (
+    <div style={{ fontFamily: 'Arial, sans-serif', background: '#f5f7fa', minHeight: '100vh', padding: '2em' }}>
+      <h2>Welcome to the AI Document App</h2>
+      <button
+        onClick={() => navigate('/evaluation')}
+        style={{ width: 240, marginTop: 32, padding: '0.7em 2em', background: '#06526D', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: '1.2em' }}
+      >
+        Go to Evaluation
+      </button>
+    </div>
+  );
+}
 
 function App() {
   const [token, setToken] = useState(DEFAULT_TOKEN);
@@ -367,153 +389,28 @@ function App() {
 
   // Main generator UI
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', background: '#f5f7fa', minHeight: '100vh', padding: '2em' }}>
-      <h2>AI Document Generator & Comparator</h2>
-      <div style={{ marginBottom: '1em', display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 900 }}>
-        <label style={{ fontWeight: 'bold' }}>
-          Token:
-          <input
-            type="text"
-            value={token}
-            onChange={e => setToken(e.target.value)}
-            style={{ width: '60%', marginLeft: 8, padding: 4, borderRadius: 4, border: '1px solid #ccc' }}
-          />
-        </label>
-        <label style={{ fontWeight: 'bold' }}>
-          Query:
-          <input
-            type="text"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            style={{ width: '60%', marginLeft: 8, padding: 4, borderRadius: 4, border: '1px solid #ccc' }}
-          />
-        </label>
-        <button
-          onClick={generate}
-          disabled={loading}
-          style={{ width: 180, marginTop: 8, padding: '0.5em 2em', background: '#06526D', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: '1em' }}
-        >
-          {loading ? 'Generating...' : 'Generate'}
-        </button>
-        <button
-          onClick={fetchDocuments}
-          style={{ width: 180, marginTop: 8, padding: '0.5em 2em', background: '#fff', color: '#06526D', border: '1px solid #06526D', borderRadius: 4, cursor: 'pointer', fontSize: '1em' }}
-        >
-          View All Documents
-        </button>
-        <button
-          onClick={runAllExampleQueries}
-          disabled={batchRunning}
-          style={{ width: 240, marginTop: 8, padding: '0.5em 2em', background: batchRunning ? '#ccc' : '#0a7d2c', color: '#fff', border: 'none', borderRadius: 4, cursor: batchRunning ? 'not-allowed' : 'pointer', fontSize: '1em' }}
-        >
-          {batchRunning ? `Running... (${batchProgress.done}/${batchProgress.total})` : 'Run All Example Queries'}
-        </button>
-        {batchRunning && (
-          <div style={{ color: '#06526D', marginTop: 8 }}>
-            Progress: {batchProgress.done} / {batchProgress.total} {batchProgress.errors > 0 && <span style={{ color: 'red' }}>Errors: {batchProgress.errors}</span>}
-          </div>
-        )}
-        {batchSummary && (
-          <div style={{ color: batchSummary.errors === 0 ? 'green' : 'red', marginTop: 8 }}>
-            Batch complete. {batchSummary.total - batchSummary.errors} succeeded, {batchSummary.errors} failed.
-          </div>
-        )}
-      </div>
-      {showReport && batchResults.length > 0 && (
-        <div style={{ marginTop: 32, background: '#fff', borderRadius: 8, border: '1px solid #e0e0e0', padding: 24 }}>
-          <h3>Batch Report</h3>
-          <div style={{ marginBottom: 16 }}>
-            <button onClick={exportCSV} style={{ marginRight: 12, padding: '0.4em 1.2em', borderRadius: 4, border: '1px solid #06526D', background: '#f5f7fa', color: '#06526D', cursor: 'pointer' }}>Export as CSV</button>
-            <button onClick={exportJSON} style={{ padding: '0.4em 1.2em', borderRadius: 4, border: '1px solid #06526D', background: '#f5f7fa', color: '#06526D', cursor: 'pointer' }}>Export as JSON</button>
-          </div>
-          {(() => {
-            const stats = getStats(batchResults);
-            return (
-              <>
-                <div style={{ marginBottom: 16 }}>
-                  <b>API 1 ({SUBDOMAIN_1}):</b> Max: {stats.api1.max.toFixed(0)} ms, Min: {stats.api1.min.toFixed(0)} ms, Avg: {stats.api1.avg.toFixed(0)} ms<br/>
-                  <b>API 2 ({SUBDOMAIN_2}):</b> Max: {stats.api2.max.toFixed(0)} ms, Min: {stats.api2.min.toFixed(0)} ms, Avg: {stats.api2.avg.toFixed(0)} ms<br/>
-                  <b>Overall:</b> Max: {stats.overall.max.toFixed(0)} ms, Min: {stats.overall.min.toFixed(0)} ms, Avg: {stats.overall.avg.toFixed(0)} ms
-                </div>
-                <table style={{ width: '100%', background: '#f5f7fa', borderRadius: 8, border: '1px solid #e0e0e0', borderCollapse: 'collapse', fontSize: 14 }}>
-                  <thead>
-                    <tr style={{ background: '#fff' }}>
-                      <th style={{ padding: 8, borderBottom: '1px solid #e0e0e0', textAlign: 'left' }}>Query</th>
-                      <th style={{ padding: 8, borderBottom: '1px solid #e0e0e0' }}>{SUBDOMAIN_1} (ms)</th>
-                      <th style={{ padding: 8, borderBottom: '1px solid #e0e0e0' }}>{SUBDOMAIN_2} (ms)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {batchResults.map((r, idx) => (
-                      <tr key={idx}>
-                        <td style={{ padding: 8, borderBottom: '1px solid #e0e0e0', color: '#06526D' }}>{r.query}</td>
-                        <td style={{ padding: 8, borderBottom: '1px solid #e0e0e0' }}>{r.time1 ? r.time1.toFixed(0) : '-'}</td>
-                        <td style={{ padding: 8, borderBottom: '1px solid #e0e0e0' }}>{r.time2 ? r.time2.toFixed(0) : '-'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </>
-            );
-          })()}
-        </div>
-      )}
-      {error && <div style={{ color: 'red', marginBottom: 16 }}>{error}</div>}
-      <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start' }}>
-        <div style={{ flex: 1, background: '#fff', borderRadius: 8, border: '1px solid #e0e0e0', padding: 24, minHeight: 300 }}>
-          <h3 style={{ color: '#06526D', borderBottom: '1px solid #e0e0e0', paddingBottom: 8 }}>
-            API 1 Result ({SUBDOMAIN_1})
-            {time1 !== null && (
-              <span style={{ fontWeight: 'normal', color: '#888', fontSize: 14, marginLeft: 8 }}>
-                {`(${time1.toFixed(0)} ms)`}
-              </span>
-            )}
-          </h3>
-          {result1 ? (
-            <>
-              <button onClick={() => download(result1, 'api1_result')} style={{ marginBottom: 12 }}>Download</button>
-              <div dangerouslySetInnerHTML={{ __html: result1.updated_html || result1.generated_text || '<i>No document found.</i>' }} className="doc-content" />
-            </>
-          ) : loading ? <div>Loading...</div> : <div style={{ color: '#888' }}>No result yet.</div>}
-        </div>
-        <div style={{ flex: 1, background: '#fff', borderRadius: 8, border: '1px solid #e0e0e0', padding: 24, minHeight: 300 }}>
-          <h3 style={{ color: '#06526D', borderBottom: '1px solid #e0e0e0', paddingBottom: 8 }}>
-            API 2 Result ({SUBDOMAIN_2})
-            {time2 !== null && (
-              <span style={{ fontWeight: 'normal', color: '#888', fontSize: 14, marginLeft: 8 }}>
-                {`(${time2.toFixed(0)} ms)`}
-              </span>
-            )}
-          </h3>
-          {result2 ? (
-            <>
-              <button onClick={() => download(result2, 'api2_result')} style={{ marginBottom: 12 }}>Download</button>
-              <div dangerouslySetInnerHTML={{ __html: result2.updated_html || result2.generated_text || '<i>No document found.</i>' }} className="doc-content" />
-            </>
-          ) : loading ? <div>Loading...</div> : <div style={{ color: '#888' }}>No result yet.</div>}
-        </div>
-      </div>
-      {/*<div style={{ marginTop: 40, background: '#fff', borderRadius: 8, border: '1px solid #e0e0e0', padding: 24 }}>
-        <h3 style={{ color: '#06526D', borderBottom: '1px solid #e0e0e0', paddingBottom: 8 }}>Logs</h3>
-        {logs.length === 0 && <div style={{ color: '#888' }}>No logs yet.</div>}
-        {logs.map((log, idx) => (
-          <div key={idx} style={{ marginBottom: 24, borderBottom: '1px solid #eee', paddingBottom: 12 }}>
-            <div style={{ fontSize: 13, color: '#888' }}>Time: {log.timestamp}</div>
-            <div style={{ fontSize: 13, color: '#888' }}>Query: <span style={{ color: '#222' }}>{log.query}</span></div>
-            <div style={{ fontSize: 13, color: '#888' }}>Token: <span style={{ color: '#222' }}>{log.token}</span></div>
-            {log.requests.map((req, i) => (
-              <div key={i} style={{ marginTop: 6, marginLeft: 12 }}>
-                <b>Subdomain:</b> {req.subdomain} <b>Time:</b> {req.responseTimeMs && req.responseTimeMs.toFixed(0)} ms
-                <details style={{ marginTop: 4 }}>
-                  <summary>Show Response</summary>
-                  <pre style={{ background: '#f6f8fa', color: '#333', fontSize: 13, padding: 8, borderRadius: 4, border: '1px dashed #06526D', overflowX: 'auto' }}>{JSON.stringify(req.response, null, 2)}</pre>
-                </details>
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>*/}
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route
+          path="/evaluation"
+          element={
+            <EvaluationPage
+              token={token}
+              setToken={setToken}
+              batchRunning={batchRunning}
+              batchProgress={batchProgress}
+              runAllExampleQueries={runAllExampleQueries}
+              showReport={showReport}
+              batchResults={batchResults}
+              exportCSV={exportCSV}
+              exportJSON={exportJSON}
+              getStats={getStats}
+            />
+          }
+        />
+      </Routes>
+    </Router>
   );
 }
 
